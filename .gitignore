@@ -3,9 +3,11 @@
 /node_modules
 # exclude everything
 covix-web/*
+covix-files/*
 
 # exception to the rule
 !covix-web/.gitkeep 
+!covix-files/.gitkeep 
 
 # Logs
 logs
