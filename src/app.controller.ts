@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, Query, Post, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, HttpStatus, Query, Post, Req, Res, UploadedFile, UseInterceptors, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Request, Response } from "express";
@@ -7,7 +7,7 @@ import { Model } from "mongoose";
 import { join } from "path";
 import { v4 as uuid } from "uuid";
 import { CovixConfig } from "./config/CovixConfig";
-import { SalaDto as RoomDto } from "./sala/room.dto";
+import { JoinRoomDto, RoomDto as RoomDto, RoomResponse } from "./sala/room.dto";
 import { Room, RoomDocument } from "./sala/room.schema";
 
 
@@ -59,7 +59,7 @@ export class AppController {
     public async newRoom(
         @Body() roomDto: RoomDto,
         @UploadedFile() file: Express.Multer.File
-    ): Promise<any> {
+    ): Promise<RoomResponse> {
         const id = uuid();
         const sala = new this.roomModel({
             id,
@@ -67,7 +67,25 @@ export class AppController {
         });
         await sala.save();
         await fs.promises.writeFile(join(CovixConfig.FILE_PATH, `${id}.mp4`), file.buffer);
-        return { id };
+        return { id, users: [roomDto.username] };
+    }
+
+    @Post("join-room")
+    public async joinRoom(
+        @Body() { id, username }: JoinRoomDto
+    ): Promise<RoomResponse> {
+        const room = await this.roomModel.findOne({ id });
+        if (!room) {
+            throw new NotFoundException("Room doesn't exist");
+        }
+        if (!room.users.includes(username)) {
+            room.users.push(username);
+            await room.save();
+        }
+        return {
+            users: room.users,
+            id: room.id
+        };
     }
 
 }
