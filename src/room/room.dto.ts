@@ -4,7 +4,12 @@ export class RoomDto {
 
 export class JoinRoomDto {
     username: string;
-    id: string;
+    roomId: string;
+}
+
+export class LeaveRoomDto {
+    username: string;
+    roomId: string;
 }
 
 export class RoomResponse {

@@ -1,22 +1,23 @@
-import { Body, Controller, Get, HttpStatus, Query, Post, Req, Res, UploadedFile, UseInterceptors, NotFoundException } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { Body, Controller, Get, HttpStatus, Post, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Request, Response } from "express";
 import * as fs from "fs";
-import { Model } from "mongoose";
 import { join } from "path";
-import { v4 as uuid } from "uuid";
 import { CovixConfig } from "./config/CovixConfig";
-import { JoinRoomDto, RoomDto as RoomDto, RoomResponse } from "./sala/room.dto";
-import { Room, RoomDocument } from "./sala/room.schema";
+import { JoinRoomDto, RoomDto as RoomDto, RoomResponse } from "./room/room.dto";
+import { RoomService } from "./room/room.service";
 
 
 @Controller("/api")
 export class AppController {
     constructor(
-        @InjectModel(Room.name)
-        private readonly roomModel: Model<RoomDocument>
+        private roomService: RoomService
     ) { }
+
+    @Get("socket-path")
+    public getSocketPath(): { socketPath: string } {
+        return { socketPath: CovixConfig.SOCKET_PATH };
+    }
 
     @Get("video")
     public async getVideo(
@@ -56,36 +57,18 @@ export class AppController {
 
     @Post("new-room")
     @UseInterceptors(FileInterceptor("videoFile"))
-    public async newRoom(
+    public newRoom(
         @Body() roomDto: RoomDto,
-        @UploadedFile() file: Express.Multer.File
+        @UploadedFile() videoFile: Express.Multer.File
     ): Promise<RoomResponse> {
-        const id = uuid();
-        const sala = new this.roomModel({
-            id,
-            users: [roomDto.username]
-        });
-        await sala.save();
-        await fs.promises.writeFile(join(CovixConfig.FILE_PATH, `${id}.mp4`), file.buffer);
-        return { id, users: [roomDto.username] };
+        return this.roomService.newRoom(roomDto, videoFile);
     }
 
     @Post("join-room")
-    public async joinRoom(
-        @Body() { id, username }: JoinRoomDto
+    public joinRoom(
+        @Body() joinRoomDto: JoinRoomDto
     ): Promise<RoomResponse> {
-        const room = await this.roomModel.findOne({ id });
-        if (!room) {
-            throw new NotFoundException("Room doesn't exist");
-        }
-        if (!room.users.includes(username)) {
-            room.users.push(username);
-            await room.save();
-        }
-        return {
-            users: room.users,
-            id: room.id
-        };
+        return this.roomService.joinRoom(joinRoomDto);
     }
 
 }

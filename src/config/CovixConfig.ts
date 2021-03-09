@@ -13,5 +13,15 @@ export class CovixConfig {
         .get("COVIX_FILE_PATH")
         .default(join(__dirname, "..", "..", "covix-files"))
         .asString();
+
+    public static readonly SOCKET_PORT: number = env
+        .get("COVIX_SOCKET_PORT")
+        .default(8080)
+        .asPortNumber();
+
+    public static readonly SOCKET_PATH: string = env
+        .get("COVIX_SOCKET_PATH")
+        .default("http://localhost:8080")
+        .asString();
         
 }
