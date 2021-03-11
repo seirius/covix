@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
+import { UserModule } from "src/user/user.module";
 import { RoomGateway } from "./room.gateway";
 import { Room, RoomSchema } from "./room.schema";
 import { RoomService } from "./room.service";
@@ -12,6 +13,7 @@ import { RoomService } from "./room.service";
                 schema: RoomSchema
             }
         ]),
+        UserModule
     ],
     providers: [
         RoomGateway,

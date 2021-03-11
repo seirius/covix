@@ -1,10 +1,10 @@
-import { Body, Controller, Get, HttpStatus, Post, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, HttpStatus, Param, Post, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Request, Response } from "express";
 import * as fs from "fs";
 import { join } from "path";
 import { CovixConfig } from "./config/CovixConfig";
-import { JoinRoomDto, RoomDto as RoomDto, RoomResponse } from "./room/room.dto";
+import { RoomResponse } from "./room/room.dto";
 import { RoomService } from "./room/room.service";
 
 
@@ -58,17 +58,18 @@ export class AppController {
     @Post("new-room")
     @UseInterceptors(FileInterceptor("videoFile"))
     public newRoom(
-        @Body() roomDto: RoomDto,
         @UploadedFile() videoFile: Express.Multer.File
     ): Promise<RoomResponse> {
-        return this.roomService.newRoom(roomDto, videoFile);
+        return this.roomService.newRoom(videoFile);
     }
 
-    @Post("join-room")
-    public joinRoom(
-        @Body() joinRoomDto: JoinRoomDto
-    ): Promise<RoomResponse> {
-        return this.roomService.joinRoom(joinRoomDto);
+    @Get("room/:id/users")
+    public async getUsers(
+        @Param("id")
+        roomId: string
+    ): Promise<string[]> {
+        return (await this.roomService.getUsers(roomId))
+            .map((({ username }) => username));
     }
 
 }

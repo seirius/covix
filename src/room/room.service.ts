@@ -1,45 +1,80 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { JoinRoomDto, RoomDto, RoomResponse } from "./room.dto";
-import { v4 as uuid } from "uuid";
 import { InjectModel } from "@nestjs/mongoose";
-import { Room, RoomDocument } from "./room.schema";
-import { Model } from "mongoose";
 import * as fs from "fs";
-import { CovixConfig } from "src/config/CovixConfig";
+import { Model } from "mongoose";
 import { join } from "path";
+import { CovixConfig } from "src/config/CovixConfig";
+import { User, UserDocument } from "src/user/user.schema";
+import { UserService } from "src/user/user.service";
+import { v4 as uuid } from "uuid";
+import { RoomResponse } from "./room.dto";
+import { Room, RoomDocument } from "./room.schema";
+
+const MESSAGES = {
+    ROOM_NOT_FOUND: "Room doesn't exist"
+}
 
 @Injectable()
 export class RoomService {
 
     constructor(
         @InjectModel(Room.name)
-        private readonly roomModel: Model<RoomDocument>
+        private readonly roomModel: Model<RoomDocument>,
+        private readonly userService: UserService
     ) {}
 
-    public async newRoom(roomDto: RoomDto, file: Express.Multer.File): Promise<RoomResponse> {
-        const id = uuid();
-        const sala = new this.roomModel({
-            id,
-            users: [roomDto.username]
+    public async newRoom(file: Express.Multer.File): Promise<RoomResponse> {
+        const roomId = uuid();
+        const room = new this.roomModel({
+            id: roomId
         });
-        await sala.save();
-        await fs.promises.writeFile(join(CovixConfig.FILE_PATH, `${id}.mp4`), file.buffer);
-        return { id, users: [roomDto.username] };
+        await room.save();
+        await fs.promises.writeFile(join(CovixConfig.FILE_PATH, `${roomId}.mp4`), file.buffer);
+        return { roomId, usernames: [] };
     }
 
-    public async joinRoom({ roomId: id, username }: JoinRoomDto): Promise<RoomResponse> {
-        const room = await this.roomModel.findOne({ id });
-        if (!room) {
-            throw new NotFoundException("Room doesn't exist");
+    public async joinRoom({ roomId, user: { username, clientId } }: {
+        roomId: string;
+        user: {
+            username: string;
+            clientId: string;
         }
-        if (!room.users.includes(username)) {
-            room.users.push(username);
+    }): Promise<void> {
+        const user: UserDocument = await this.userService.saveUser(username, clientId);
+        const room = await this.roomModel.findOne({ id: roomId });
+        if (!room) {
+            throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
+        }
+        if (!room.users.find(({ _id }) => user._id === _id)) {
+            room.users.push(user);
             await room.save();
         }
-        return {
-            users: room.users,
-            id: room.id
-        };
+    }
+
+    public async leaveRoom({ roomId, clientId }: {
+        roomId: string;
+        clientId: string;
+    }): Promise<void> {
+        const room = await this.roomModel.findOne({ id: roomId });
+        if (!room) {
+            throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
+        }
+        const [ user ] = await this.userService.getUsersBy({ clientId });
+        if (user) {
+            const index = room.users.findIndex(({ _id }) => _id === user._id);
+            if (index > -1) {
+                room.users.splice(index, 1);
+                await room.save();
+            }
+        }
+    }
+
+    public async getUsers(roomId: string): Promise<UserDocument[]> {
+        const room = await this.roomModel.findOne({ id: roomId }).populate("users", null, User.name);
+        if (!room) {
+            throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
+        }
+        return room.users;
     }
 
 }
