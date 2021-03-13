@@ -9,6 +9,11 @@ export class CovixConfig {
         .default(3000)
         .asPortNumber();
 
+    public static readonly MONGO_URL: string = env
+        .get("COVIX_MONGO_URL")
+        .default("mongodb://localhost/covix")
+        .asString();
+
     public static readonly FILE_PATH: string = env
         .get("COVIX_FILE_PATH")
         .default(join(__dirname, "..", "..", "covix-files"))

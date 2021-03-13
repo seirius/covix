@@ -4,6 +4,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CovixConfig } from './config/CovixConfig';
 import { RoomModule } from './room/room.module';
 
 @Module({
@@ -12,7 +13,7 @@ import { RoomModule } from './room/room.module';
             rootPath: join(__dirname, "..", "covix-web"),
             exclude: ["/api*"]
         }),
-        MongooseModule.forRoot("mongodb://localhost/covix"),
+        MongooseModule.forRoot(CovixConfig.MONGO_URL),
         RoomModule
     ],
     controllers: [AppController],

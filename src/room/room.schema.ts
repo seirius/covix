@@ -14,6 +14,9 @@ export class Room {
         ref: User.name
     })
     users: UserDocument[];
+
+    @Prop()
+    tracks: string[];
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

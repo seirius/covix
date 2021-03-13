@@ -63,6 +63,16 @@ export class AppController {
         return this.roomService.newRoom(videoFile);
     }
 
+    @Post("room/:id/track")
+    @UseInterceptors(FileInterceptor("subtitleFile"))
+    public async addTrack(
+        @UploadedFile() subtitleFile: Express.Multer.File,
+        @Body() body: { language: string; },
+        @Param("id") roomId: string
+    ): Promise<void> {
+        await this.roomService.addTrack(roomId, subtitleFile, body.language);
+    }
+
     @Get("room/:id/users")
     public async getUsers(
         @Param("id")
@@ -70,6 +80,26 @@ export class AppController {
     ): Promise<string[]> {
         return (await this.roomService.getUsers(roomId))
             .map((({ username }) => username));
+    }
+
+    @Get("room/:id/tracks")
+    public getTracks(
+        @Param("id")
+        roomId: string
+    ): Promise<string[]> {
+        return this.roomService.getTracks(roomId);
+    }
+
+    @Get("room/:id/track/:lang")
+    public getTrack(
+        @Param("id")
+        roomId: string,
+        @Param("lang")
+        lang: string,
+        @Res()
+        response: Response
+    ): void {
+        response.sendFile(join(CovixConfig.FILE_PATH, `${roomId}_${lang}.vtt`));
     }
 
 }

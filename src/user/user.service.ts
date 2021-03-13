@@ -11,14 +11,15 @@ export class UserService {
         public readonly userModel: Model<UserDocument>
     ) {}
 
-    public async saveUser(username: string, clientId: string): Promise<UserDocument> {
-        let user = await this.userModel.findOne({ clientId });
+    public async saveUser(username: string, clientId: string, roomId: string): Promise<UserDocument> {
+        let user = await this.userModel.findOne({ username, roomId });
         if (!user) {
             user = new this.userModel({
-                username, clientId
+                username, clientId, roomId
             });
         } else {
             user.username = username;
+            user.clientId = clientId;
         }
         user.createAt = new Date();
         await user.save();

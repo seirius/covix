@@ -33,6 +33,27 @@ export class RoomService {
         return { roomId, usernames: [] };
     }
 
+    public async addTrack(roomId: string, file: Express.Multer.File, lang: string): Promise<void> {
+        const room = await this.roomModel.findOne({ id: roomId });
+        if (!room) {
+            throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
+        }
+        if (!room.tracks) {
+            room.tracks = [];
+        }
+        await fs.promises.writeFile(join(CovixConfig.FILE_PATH, `${roomId}_${lang}.vtt`), file.buffer);
+        room.tracks.push(lang);
+        await room.save();
+    } 
+
+    public async getTracks(roomId: string): Promise<string[]> {
+        const room = await this.roomModel.findOne({ id: roomId });
+        if (!room) {
+            throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
+        }
+        return room.tracks;
+    }
+
     public async joinRoom({ roomId, user: { username, clientId } }: {
         roomId: string;
         user: {
@@ -40,7 +61,7 @@ export class RoomService {
             clientId: string;
         }
     }): Promise<void> {
-        const user: UserDocument = await this.userService.saveUser(username, clientId);
+        const user: UserDocument = await this.userService.saveUser(username, clientId, roomId);
         const room = await this.roomModel.findOne({ id: roomId });
         if (!room) {
             throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
@@ -61,7 +82,7 @@ export class RoomService {
         }
         const [ user ] = await this.userService.getUsersBy({ clientId });
         if (user) {
-            const index = room.users.findIndex(({ _id }) => _id === user._id);
+            const index = room.users.findIndex(({ _id }) => _id.equals(user._id));
             if (index > -1) {
                 room.users.splice(index, 1);
                 await room.save();
