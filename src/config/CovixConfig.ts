@@ -28,5 +28,15 @@ export class CovixConfig {
         .get("COVIX_SOCKET_PATH")
         .default("http://localhost:8080")
         .asString();
+
+    public static readonly CRON_JOIN_ROOM_CURRENT_TIME = env
+        .get("COVIX_JOB_TIME_ROOM_CURRENT_TIME")
+        .default("*/3 * * * * *")
+        .asString();
+
+    public static readonly ROOM_EXPIRE_TIME: number = env
+        .get("COVIX_ROOM_EXPIRE_TIME")
+        .default(60)
+        .asInt();
         
 }

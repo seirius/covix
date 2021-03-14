@@ -1,16 +1,17 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsResponse } from "@nestjs/websockets";
-import { Socket, Server, Namespace } from "socket.io";
+import { Socket, Server } from "socket.io";
 import { CovixConfig } from "src/config/CovixConfig";
 import { UserService } from "src/user/user.service";
 import { RoomService } from "./room.service";
 
-const EVENTS = {
+export const EVENTS = {
     JOIN_ROOM: "join-room",
     LEAVE_ROOM: "leave-room",
     JOINED_ROOM: "joined-room",
     PLAY: "play",
     PAUSE: "pause",
-    NEW_TRACK: "new-track"
+    NEW_TRACK: "new-track",
+    REQUEST_CURRENT_TIME: "request-current-time"
 };
 
 @WebSocketGateway(CovixConfig.SOCKET_PORT)
@@ -111,6 +112,16 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() socket: Socket
     ): Promise<void> {
         this.broadcast(roomId, EVENTS.NEW_TRACK, { language });
+    }
+
+    @SubscribeMessage(EVENTS.REQUEST_CURRENT_TIME)
+    public newCurrentTime(
+        @MessageBody() { roomId, currentTime }: {
+            roomId: string;
+            currentTime: number;
+        }
+    ): Promise<void> {
+        return this.roomService.updateCurrentTime(roomId, currentTime);
     }
 
     handleConnection(client: Socket, ...args: any[]) {

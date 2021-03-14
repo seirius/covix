@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 import * as fs from "fs";
 import { join } from "path";
 import { CovixConfig } from "./config/CovixConfig";
-import { RoomResponse } from "./room/room.dto";
+import { RoomDto, RoomResponse } from "./room/room.dto";
 import { RoomService } from "./room/room.service";
 
 
@@ -12,7 +12,8 @@ import { RoomService } from "./room/room.service";
 export class AppController {
     constructor(
         private roomService: RoomService
-    ) { }
+    ) {
+    }
 
     @Get("socket-path")
     public getSocketPath(): { socketPath: string } {
@@ -100,6 +101,14 @@ export class AppController {
         response: Response
     ): void {
         response.sendFile(join(CovixConfig.FILE_PATH, `${roomId}_${lang}.vtt`));
+    }
+
+    @Get("room/:id")
+    public getRoom(
+        @Param("id")
+        roomId: string
+    ): Promise<RoomDto> {
+        return this.roomService.getRoom(roomId);
     }
 
 }
