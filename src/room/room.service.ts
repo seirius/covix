@@ -15,8 +15,8 @@ const MESSAGES = {
 }
 
 const PATHS = {
-    getRoomPath: function (roomId: string): string {
-        return join(CovixConfig.FILE_PATH, `${roomId}.mp4`);
+    getRoomPath: function (filename: string): string {
+        return join(CovixConfig.FILE_PATH, filename);
     },
     getVttPath: function (roomId: string, lang: string): string {
         return join(CovixConfig.FILE_PATH, `${roomId}_${lang}.vtt`);
@@ -32,8 +32,8 @@ export class RoomService {
         private readonly userService: UserService
     ) {}
 
-    public async removeVideo(roomId: string): Promise<void> {
-        await fs.promises.unlink(PATHS.getRoomPath(roomId));
+    public async removeVideo(filename: string): Promise<void> {
+        await fs.promises.unlink(PATHS.getRoomPath(filename));
     }
 
     public async removeVtt(roomId: string, lang: string): Promise<void> {
@@ -42,9 +42,11 @@ export class RoomService {
 
     public async newRoom(file: Express.Multer.File): Promise<RoomResponse> {
         const roomId = uuid();
-        const room = new this.roomModel({ roomId });
+        const room = new this.roomModel({ 
+            roomId,
+            filename: file.filename
+        });
         await room.save();
-        await fs.promises.writeFile(PATHS.getRoomPath(roomId), file.buffer);
         return { roomId, usernames: [] };
     }
 
@@ -126,10 +128,11 @@ export class RoomService {
     }
 
     public async getRoom(roomId: string): Promise<RoomDto> {
-        const { users, tracks, currentTime } = await this.roomModel.findOne({ roomId })
+        const { users, filename, tracks, currentTime } = await this.roomModel.findOne({ roomId })
             .populate("users", null, User.name);
         return {
             roomId,
+            filename,
             users: users.map(({ username }) => username),
             tracks,
             currentTime
@@ -150,7 +153,7 @@ export class RoomService {
             }
             await Promise.all([
                 ...tracks.map(track => this.removeVtt(roomId, track)),
-                this.removeVideo(roomId)
+                this.removeVideo(room.filename)
             ]);
             await this.roomModel.deleteOne({ roomId });
         }

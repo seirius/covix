@@ -10,6 +10,9 @@ export class Room {
     @Prop()
     roomId: string;
 
+    @Prop()
+    filename: string;
+
     @Prop({
         type: [Types.ObjectId],
         ref: User.name

@@ -2,10 +2,12 @@ import { Body, Controller, Get, HttpStatus, Param, Post, Query, Req, Res, Upload
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Request, Response } from "express";
 import * as fs from "fs";
-import { join } from "path";
+import { join, extname } from "path";
 import { CovixConfig } from "./config/CovixConfig";
 import { RoomDto, RoomResponse } from "./room/room.dto";
 import { RoomService } from "./room/room.service";
+import { diskStorage } from "multer";
+import { v4 as uuid } from "uuid";
 
 
 @Controller("/api")
@@ -26,13 +28,15 @@ export class AppController {
         request: Request,
         @Res()
         response: Response,
-        @Query("id")
-        id: string
+        @Query("filename")
+        filename: string
     ) {
-        const path = join(CovixConfig.FILE_PATH, `${id}.mp4`);
+        const path = join(CovixConfig.FILE_PATH, filename);
         const stat = await fs.promises.stat(path);
         const fileSize = stat.size;
         const { range } = request.headers;
+        const ext = extname(filename);
+        const contentType = `video/${ext}`;
         if (range) {
             const parts = range.replace(/bytes=/, "").split("-");
             const start = parseInt(parts[0], 10);
@@ -44,20 +48,25 @@ export class AppController {
                 "Content-Range": `bytes ${start}-${end}/${fileSize}`,
                 "Accept-Ranges": "bytes",
                 "Content-Length": chunkSize,
-                "Content-Type": "video/mp4",
+                "Content-Type": contentType,
             });
             file.pipe(response);
         } else {
             response.writeHead(HttpStatus.OK, {
                 "Content-Length": fileSize,
-                "Content-Type": "video/mp4",
+                "Content-Type": contentType,
             });
             fs.createReadStream(path).pipe(response);
         }
     }
 
     @Post("new-room")
-    @UseInterceptors(FileInterceptor("videoFile"))
+    @UseInterceptors(FileInterceptor("videoFile", {
+        storage: diskStorage({
+            destination: CovixConfig.FILE_PATH,
+            filename: (req, file, cb) => cb(null, `${uuid()}${extname(file.originalname)}`)
+        })
+    }))
     public newRoom(
         @UploadedFile() videoFile: Express.Multer.File
     ): Promise<RoomResponse> {
