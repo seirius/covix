@@ -5,8 +5,6 @@ export interface RoomResponse {
 
 export interface RoomDto {
     roomId: string;
-    filename: string;
     users: string[];
-    tracks: string[];
     currentTime: number;
 }

@@ -1,26 +1,28 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
-import { CovixConfig } from "src/config/CovixConfig";
-import { User, UserDocument } from "src/user/user.schema";
+import { Media } from "src/media/media.schema";
+import { User } from "src/user/user.schema";
 
 export type RoomDocument = Room & Document;
 
 @Schema()
-export class Room {
+export class Room extends Document {
+    _id: string;
+
     @Prop()
     roomId: string;
 
-    @Prop()
-    filename: string;
+    @Prop({
+        type: Types.ObjectId,
+        ref: Media.name
+    })
+    media: Media;
 
     @Prop({
         type: [Types.ObjectId],
         ref: User.name
     })
-    users: UserDocument[];
-
-    @Prop()
-    tracks: string[];
+    users: User[];
 
     @Prop({
         default: 0

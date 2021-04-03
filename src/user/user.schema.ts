@@ -1,12 +1,12 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
+import { Document } from "mongoose";
 
 export type UserDocument = User & Document;
 
 @Schema()
 export class User {
     _id: string;
-
+    
     @Prop()
     username: string;
 
@@ -16,10 +16,14 @@ export class User {
     @Prop({
         default: Date.now
     })
-    createAt: Date;
+    createdAt: Date;
 
     @Prop()
     roomId: string;
+
+    public asDocument(): UserDocument {
+        return <any>this as UserDocument;
+    }
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

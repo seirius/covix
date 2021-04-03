@@ -1,27 +1,19 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import * as fs from "fs";
 import { Model } from "mongoose";
-import { join } from "path";
 import { CovixConfig } from "src/config/CovixConfig";
+import { File } from "src/file/file.schema";
+import { Media } from "src/media/media.schema";
+import { MediaService } from "src/media/media.service";
 import { User, UserDocument } from "src/user/user.schema";
 import { UserService } from "src/user/user.service";
 import { v4 as uuid } from "uuid";
-import { RoomResponse, RoomDto } from "./room.dto";
+import { RoomDto, RoomResponse } from "./room.dto";
 import { Room, RoomDocument } from "./room.schema";
 
 const MESSAGES = {
     ROOM_NOT_FOUND: "Room doesn't exist"
 }
-
-const PATHS = {
-    getRoomPath: function (filename: string): string {
-        return join(CovixConfig.FILE_PATH, filename);
-    },
-    getVttPath: function (roomId: string, lang: string): string {
-        return join(CovixConfig.FILE_PATH, `${roomId}_${lang}.vtt`);
-    }
-};
 
 @Injectable()
 export class RoomService {
@@ -29,46 +21,38 @@ export class RoomService {
     constructor(
         @InjectModel(Room.name)
         public readonly roomModel: Model<RoomDocument>,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        private readonly mediaService: MediaService,
     ) {}
 
-    public async removeVideo(filename: string): Promise<void> {
-        await fs.promises.unlink(PATHS.getRoomPath(filename));
-    }
-
-    public async removeVtt(roomId: string, lang: string): Promise<void> {
-        await fs.promises.unlink(PATHS.getVttPath(roomId, lang));
-    }
-
-    public async newRoom(file: Express.Multer.File): Promise<RoomResponse> {
+    public async newRoom(mediaId: string): Promise<RoomResponse> {
+        const media = await this.mediaService.mediaModel.findById(mediaId);
+        if (!media) {
+            throw new NotFoundException("No media found");
+        }
         const roomId = uuid();
         const room = new this.roomModel({ 
             roomId,
-            filename: file.filename
+            media,
         });
         await room.save();
         return { roomId, usernames: [] };
     }
 
-    public async addTrack(roomId: string, file: Express.Multer.File, lang: string): Promise<void> {
-        const room = await this.roomModel.findOne({ roomId });
-        if (!room) {
-            throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
-        }
-        if (!room.tracks) {
-            room.tracks = [];
-        }
-        await fs.promises.writeFile(PATHS.getVttPath(roomId, lang), file.buffer);
-        room.tracks.push(lang);
-        await room.save();
-    } 
-
     public async getTracks(roomId: string): Promise<string[]> {
-        const room = await this.roomModel.findOne({ roomId });
+        const room = await this.roomModel.findOne({ roomId })
+        .populate({
+            path: "media",
+            model: Media.name,
+            populate: {
+                path: "tracks",
+                model: File.name
+            }
+        });
         if (!room) {
             throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
         }
-        return room.tracks;
+        return room.media.tracks?.map(file => file.originalName);
     }
 
     public async joinRoom({ roomId, user: { username, clientId } }: {
@@ -93,13 +77,14 @@ export class RoomService {
         roomId: string;
         clientId: string;
     }): Promise<void> {
-        const room = await this.roomModel.findOne({ roomId });
+        const room = await this.roomModel.findOne({ roomId })
+        .populate("users", null, User.name);
         if (!room) {
             throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
         }
         const [ user ] = await this.userService.getUsersBy({ clientId });
         if (user) {
-            const index = room.users.findIndex(({ _id }) => _id.equals(user._id));
+            const index = room.users.findIndex(({ _id }) => _id === user._id);
             if (index > -1) {
                 room.users.splice(index, 1);
                 room.lastUserDate = new Date();
@@ -109,8 +94,9 @@ export class RoomService {
         }
     }
 
-    public async getUsers(roomId: string): Promise<UserDocument[]> {
-        const room = await this.roomModel.findOne({ roomId }).populate("users", null, User.name);
+    public async getUsers(roomId: string): Promise<User[]> {
+        const room = await this.roomModel.findOne({ roomId })
+        .populate("users", null, User.name);
         if (!room) {
             throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
         }
@@ -128,13 +114,11 @@ export class RoomService {
     }
 
     public async getRoom(roomId: string): Promise<RoomDto> {
-        const { users, filename, tracks, currentTime } = await this.roomModel.findOne({ roomId })
+        const { users, currentTime } = await this.roomModel.findOne({ roomId })
             .populate("users", null, User.name);
         return {
             roomId,
-            filename,
             users: users.map(({ username }) => username),
-            tracks,
             currentTime
         };
     }
@@ -144,19 +128,7 @@ export class RoomService {
     }
 
     public async deleteRoom(roomId: string): Promise<void> {
-        const room = await this.roomModel.findOne({ roomId });
-        if (room) {
-            await this.userService.userModel.deleteMany({ roomId });
-            let tracks = [];
-            if (room.tracks) {
-                tracks = room.tracks;
-            }
-            await Promise.all([
-                ...tracks.map(track => this.removeVtt(roomId, track)),
-                this.removeVideo(room.filename)
-            ]);
-            await this.roomModel.deleteOne({ roomId });
-        }
+        await this.roomModel.deleteOne({ roomId });
     }
 
 }

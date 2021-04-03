@@ -21,7 +21,7 @@ export class UserService {
             user.username = username;
             user.clientId = clientId;
         }
-        user.createAt = new Date();
+        user.createdAt = new Date();
         await user.save();
         return user;
     }
@@ -30,9 +30,14 @@ export class UserService {
         _id?: string;
         username?: string;
         clientId?: string;
-        createdAt?: number;
+        createdAt?: Date;
     }): Promise<User[]> {
-        const users = await this.userModel.find(by);
+        const users = await this.userModel.find({
+            _id: by._id,
+            username: by.username,
+            clientId: by.clientId,
+            createdAt: by.createdAt
+        });
         return users;
     }
 

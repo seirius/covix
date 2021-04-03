@@ -5,6 +5,7 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CovixConfig } from './config/CovixConfig';
+import { MovieModule } from './movie/movie.module';
 import { RoomModule } from './room/room.module';
 
 @Module({
@@ -14,7 +15,8 @@ import { RoomModule } from './room/room.module';
             exclude: ["/api*"]
         }),
         MongooseModule.forRoot(CovixConfig.MONGO_URL),
-        RoomModule
+        RoomModule,
+        MovieModule
     ],
     controllers: [AppController],
     providers: [
