@@ -114,12 +114,17 @@ export class RoomService {
     }
 
     public async getRoom(roomId: string): Promise<RoomDto> {
-        const { users, currentTime } = await this.roomModel.findOne({ roomId })
-            .populate("users", null, User.name);
+        const room = await this.roomModel.findOne({ roomId })
+            .populate("users", null, User.name)
+            .populate("media", null, Media.name);
+        if (!room) {
+            throw new NotFoundException("Room not found");
+        }
         return {
             roomId,
-            users: users.map(({ username }) => username),
-            currentTime
+            users: room.users?.map(({ username }) => username),
+            currentTime: room.currentTime,
+            mediaId: room.media._id
         };
     }
 

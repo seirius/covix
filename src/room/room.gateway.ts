@@ -1,6 +1,7 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsResponse } from "@nestjs/websockets";
 import { Socket, Server } from "socket.io";
 import { CovixConfig } from "src/config/CovixConfig";
+import { FileResponse } from "src/file/file.data";
 import { UserService } from "src/user/user.service";
 import { RoomService } from "./room.service";
 
@@ -105,13 +106,13 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage(EVENTS.NEW_TRACK)
     public async newTrack(
-        @MessageBody() { roomId, language }: {
+        @MessageBody() { roomId, track }: {
             roomId: string;
-            language: string;
+            track: FileResponse;
         },
         @ConnectedSocket() socket: Socket
     ): Promise<void> {
-        this.broadcast(roomId, EVENTS.NEW_TRACK, { language });
+        this.broadcast(roomId, EVENTS.NEW_TRACK, track);
     }
 
     @SubscribeMessage(EVENTS.REQUEST_CURRENT_TIME)

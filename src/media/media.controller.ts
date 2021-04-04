@@ -7,6 +7,11 @@ import { File } from "src/file/file.schema";
 import { getFilePath } from "src/file/file.service";
 import { MediaService } from "./media.service";
 
+export interface MediaResponse {
+    file: FileResponse;
+    tracks: FileResponse[];
+}
+
 @Controller("api/media")
 export class MediaController {
 
@@ -63,14 +68,18 @@ export class MediaController {
         response.sendFile(filePath);
     }
 
-    @Get(":id/tracks")
-    public async getTracks(@Param("id") mediaId: string): Promise<FileResponse[]> {
+    @Get(":id")
+    public async getMedia(@Param("id") mediaId: string): Promise<MediaResponse> {
         const media = await this.mediaService.mediaModel.findById(mediaId)
-        .populate("tracks", null, File.name);
+        .populate("tracks", null, File.name)
+        .populate("file", null, File.name);
         if (!media) {
             throw new NotFoundException("Media not found");
         }
-        return media.tracks?.map(fileAsResponse);
+        return {
+            file: fileAsResponse(media.file),
+            tracks: media.tracks?.map(fileAsResponse)
+        };
     }
 
     @Put(":id/track")

@@ -7,4 +7,5 @@ export interface RoomDto {
     roomId: string;
     users: string[];
     currentTime: number;
+    mediaId: string;
 }
