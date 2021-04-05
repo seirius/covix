@@ -58,6 +58,7 @@ export class UserController {
             throw new NotFoundException("User not found");
         }
         await user.delete();
+        this.userGateway.deleteUser(username);
     }
 
 }

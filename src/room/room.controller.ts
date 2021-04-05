@@ -19,9 +19,9 @@ export class RoomController {
 
     @Post("")
     public newRoom(
-        @Body() body: { mediaId: string; }
+        @Body() body: { mediaId: string; username: string }
     ): Promise<RoomResponse> {
-        return this.roomService.newRoom(body.mediaId);
+        return this.roomService.newRoom(body.mediaId, body.username);
     }
 
     @Get(":id/users")

@@ -30,6 +30,10 @@ export class UserGateway implements OnGatewayDisconnect, OnGatewayInit {
         this.server.sockets.emit(EVENTS.USER_JOINED, username);
     }
 
+    public deleteUser(username: string): void {
+        this.server.sockets.emit(EVENTS.USER_DELETED, username);
+    }
+
     async handleDisconnect(client: Socket) {
         const user = await this.userService.userModel.findOne({ clientId: client.id });
         if (user) {

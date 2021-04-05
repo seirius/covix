@@ -10,5 +10,6 @@ export const EVENTS = {
     MOVIE_DELETE: "movie-delete",
     NEW_USER: "new-user",
     USER_LEFT: "user-left",
-    USER_JOINED: "user-joined"
+    USER_JOINED: "user-joined",
+    USER_DELETED: "user-deleted"
 };

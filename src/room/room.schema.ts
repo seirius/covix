@@ -38,6 +38,12 @@ export class Room extends Document {
         default: Date.now
     })
     lastUserDate: Date;
+
+    @Prop({
+        type: Types.ObjectId,
+        ref: User.name
+    })
+    owner: User;
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

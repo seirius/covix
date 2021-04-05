@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsResponse } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { CovixConfig } from "src/config/CovixConfig";
@@ -9,6 +10,8 @@ import { RoomService } from "./room.service";
 @WebSocketGateway(CovixConfig.SOCKET_PORT)
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
+    private static readonly LOGGER = new Logger(RoomGateway.name);
+
     @WebSocketServer()
     public server: Server;
 
@@ -19,6 +22,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     public async getClients(roomId: string, ignoreClients: string[] = []): Promise<Socket[]> {
+        console.log(roomId);
         const users = await this.roomService.getUsers(roomId);
         return users
             .filter(({ clientId }) => !ignoreClients.includes(clientId))
@@ -61,11 +65,15 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
         @ConnectedSocket() socket: Socket
     ): Promise<WsResponse<boolean>> {
-        const { username } = await this.roomService.leaveRoom({
-            clientId: socket.id
-        });
-        if (username) {
-            this.broadcast(roomId, EVENTS.LEAVE_ROOM, username);
+        try {
+            const { username } = await this.roomService.leaveRoom({
+                clientId: socket.id
+            });
+            if (username) {
+                this.broadcast(roomId, EVENTS.LEAVE_ROOM, username);
+            }
+        } catch (error) {
+            RoomGateway.LOGGER.error(`Error leaving room: ${error.toString()}`, error);
         }
         return {
             event: EVENTS.LEAVE_ROOM,

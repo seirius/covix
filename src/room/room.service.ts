@@ -25,15 +25,20 @@ export class RoomService {
         private readonly mediaService: MediaService,
     ) {}
 
-    public async newRoom(mediaId: string): Promise<RoomResponse> {
+    public async newRoom(mediaId: string, username: string): Promise<RoomResponse> {
         const media = await this.mediaService.mediaModel.findById(mediaId);
         if (!media) {
             throw new NotFoundException("No media found");
+        }
+        const user = await this.userService.userModel.findOne({ username });
+        if (!user) {
+            throw new NotFoundException("No user found");
         }
         const roomId = uuid();
         const room = new this.roomModel({ 
             roomId,
             media,
+            owner: user
         });
         await room.save();
         return { roomId, usernames: [] };
@@ -87,7 +92,7 @@ export class RoomService {
             });
             username = user.username;
             if (room) {
-                roomId = room.id;
+                roomId = room.roomId;
                 const index = room.users.findIndex(({ _id }) => _id === user._id);
                 if (index > -1) {
                     room.users.splice(index, 1);
