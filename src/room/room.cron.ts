@@ -3,7 +3,8 @@ import { RoomService } from "./room.service";
 import { CronJob, job } from "cron";
 import { CovixConfig } from "src/config/CovixConfig";
 import { User } from "src/user/user.schema";
-import { RoomGateway, EVENTS } from "./room.gateway";
+import { RoomGateway } from "./room.gateway";
+import { EVENTS } from "src/util/socket-events";
 
 // '* * * * * *' - runs every second
 // '*/5 * * * * *' - runs every 5 seconds

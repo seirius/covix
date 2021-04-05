@@ -62,7 +62,7 @@ export class RoomService {
             clientId: string;
         }
     }): Promise<void> {
-        const user: UserDocument = await this.userService.saveUser(username, clientId, roomId);
+        const user: UserDocument = await this.userService.saveUser({ username, clientId });
         const room = await this.roomModel.findOne({ roomId });
         if (!room) {
             throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
@@ -73,25 +73,30 @@ export class RoomService {
         }
     }
 
-    public async leaveRoom({ roomId, clientId }: {
-        roomId: string;
+    public async leaveRoom({ clientId }: {
         clientId: string;
-    }): Promise<void> {
-        const room = await this.roomModel.findOne({ roomId })
-        .populate("users", null, User.name);
-        if (!room) {
-            throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
-        }
-        const [ user ] = await this.userService.getUsersBy({ clientId });
+    }): Promise<{ roomId: string; username: string; }> {
+        const user = await this.userService.userModel.findOne({ clientId });
+        let username: string, roomId: string;
         if (user) {
-            const index = room.users.findIndex(({ _id }) => _id === user._id);
-            if (index > -1) {
-                room.users.splice(index, 1);
-                room.lastUserDate = new Date();
-                await room.save();
+            const room = await this.roomModel
+            .findOne({
+                users: {
+                    $in: [user]
+                }
+            });
+            username = user.username;
+            if (room) {
+                roomId = room.id;
+                const index = room.users.findIndex(({ _id }) => _id === user._id);
+                if (index > -1) {
+                    room.users.splice(index, 1);
+                    room.lastUserDate = new Date();
+                    await room.save();
+                }
             }
-            await this.userService.userModel.deleteOne({ clientId });
         }
+        return { roomId, username };
     }
 
     public async getUsers(roomId: string): Promise<User[]> {

@@ -1,28 +1,30 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
 import { File } from "src/file/file.schema";
 import { Media } from "src/media/media.schema";
-import { movieAsResponse, MovieResponse } from "./movie.data";
+import { AddMovieArgs, movieAsResponse, MovieResponse } from "./movie.data";
+import { MovieGateway } from "./movie.gateway";
 import { MovieService } from "./movie.service";
 
 @Controller("api/movie")
 export class MovieController {
 
     constructor(
-        private readonly movieService: MovieService
+        private readonly movieService: MovieService,
+        private readonly movieGateway: MovieGateway
     ) {}
 
     @Post("")
     public async saveMovie(
-        @Body() body: { label: string, name: string }
+        @Body() body: AddMovieArgs
     ): Promise<MovieResponse> {
-        const movie = await this.movieService.addMovie(body.label, body.name);
+        const movie = await this.movieService.addMovie(body);
         return movieAsResponse(movie);
     }
 
     @Get("")
     public async getMovie(@Query("id") id: string): Promise<MovieResponse> {
         const movie = await this.movieService.movieModel
-        .findOne({ _id: id })
+        .findById(id)
         .populate({
             path: "media",
             model: Media.name,
@@ -30,7 +32,8 @@ export class MovieController {
                 path: "file",
                 model: File.name
             }
-        });
+        })
+        .populate("icon", null, File.name);
         if (!movie) {
             throw new NotFoundException("Movie not found");
         }
@@ -49,8 +52,19 @@ export class MovieController {
                 model: File.name
             }
         })
+        .populate("icon", null, File.name)
         .sort({ label: "asc" })
         return movies.map(movieAsResponse);
+    }
+
+    @Delete(":id")
+    public async deleteMovie(@Param("id") id: string): Promise<void> {
+        const movie = await this.movieService.movieModel.findById(id);
+        if (!movie) {
+            throw new NotFoundException("Movie not found");
+        }
+        await this.movieService.removeMovie(id);
+        this.movieGateway.movieDeleted(id);
     }
 
 

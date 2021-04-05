@@ -1,19 +1,10 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsResponse } from "@nestjs/websockets";
-import { Socket, Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { CovixConfig } from "src/config/CovixConfig";
 import { FileResponse } from "src/file/file.data";
 import { UserService } from "src/user/user.service";
+import { EVENTS } from "src/util/socket-events";
 import { RoomService } from "./room.service";
-
-export const EVENTS = {
-    JOIN_ROOM: "join-room",
-    LEAVE_ROOM: "leave-room",
-    JOINED_ROOM: "joined-room",
-    PLAY: "play",
-    PAUSE: "pause",
-    NEW_TRACK: "new-track",
-    REQUEST_CURRENT_TIME: "request-current-time"
-};
 
 @WebSocketGateway(CovixConfig.SOCKET_PORT)
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -70,12 +61,12 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
         @ConnectedSocket() socket: Socket
     ): Promise<WsResponse<boolean>> {
-        await this.roomService.leaveRoom({
-            roomId,
+        const { username } = await this.roomService.leaveRoom({
             clientId: socket.id
         });
-        const [{ username }] = await this.userService.getUsersBy({ clientId: socket.id });
-        this.broadcast(roomId, EVENTS.LEAVE_ROOM, username);
+        if (username) {
+            this.broadcast(roomId, EVENTS.LEAVE_ROOM, username);
+        }
         return {
             event: EVENTS.LEAVE_ROOM,
             data: true
@@ -126,19 +117,13 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     handleConnection(client: Socket, ...args: any[]) {
-        console.log("client connected", client.id);
+        client.emit(EVENTS.CLIENT_ID, client.id);
     }
 
     async handleDisconnect(client: Socket): Promise<void> {
-        const users = await this.userService.getUsersBy({ clientId: client.id });
-        if (users.length) {
-            users.forEach(async ({ username, roomId }) => {
-                await this.roomService.leaveRoom({
-                    roomId,
-                    clientId: client.id
-                });
-                this.broadcast(roomId, EVENTS.LEAVE_ROOM, username);
-            });
+        const { roomId, username } = await this.roomService.leaveRoom({ clientId: client.id });
+        if (roomId && username) {
+            this.broadcast(roomId, EVENTS.LEAVE_ROOM, username);
         }
     }
 

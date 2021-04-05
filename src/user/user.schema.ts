@@ -18,9 +18,6 @@ export class User {
     })
     createdAt: Date;
 
-    @Prop()
-    roomId: string;
-
     public asDocument(): UserDocument {
         return <any>this as UserDocument;
     }

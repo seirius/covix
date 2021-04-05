@@ -5,8 +5,17 @@ export function movieAsResponse(movie: Movie): MovieResponse {
         id: (<any>movie).id,
         mediaId: (<any>movie?.media)?.id,
         filename: movie?.media?.file?.name,
-        label: movie.label
+        label: movie.label,
+        iconUrl: movie.iconUrl,
+        icon: movie.icon?.name
     };
+}
+
+export interface AddMovieArgs {
+    label: string;
+    name: string;
+    iconUrl?: string;
+    icon?: string;
 }
 
 export class MovieResponse {
@@ -14,4 +23,6 @@ export class MovieResponse {
     mediaId: string;
     filename: string;
     label: string;
+    iconUrl?: string;
+    icon?: string;
 }

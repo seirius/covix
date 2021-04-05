@@ -68,6 +68,17 @@ export class MediaController {
         response.sendFile(filePath);
     }
 
+    @Get(":imagename/image")
+    public getImage(
+        @Param("imagename")
+        imagename: string,
+        @Res()
+        response: Response
+    ): void {
+        const filePath = getFilePath(imagename);
+        response.sendFile(filePath);
+    }
+
     @Get(":id")
     public async getMedia(@Param("id") mediaId: string): Promise<MediaResponse> {
         const media = await this.mediaService.mediaModel.findById(mediaId)
