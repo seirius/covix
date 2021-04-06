@@ -37,7 +37,9 @@ export class RoomService {
         let room = await this.roomModel.findOne({
             media: media._id,
             owner: user._id
-        }).populate("users", null, User.name);
+        })
+        .populate("users", null, User.name)
+        .populate("owner", null, User.name);
         let usernames = [];
         if (!room) {
             room = new this.roomModel({ 
@@ -49,7 +51,7 @@ export class RoomService {
         } else {
             usernames = room.users.map(({ username }) => username);
         }
-        return { roomId: room.roomId, usernames };
+        return { roomId: room.roomId, usernames, owner: room.owner.username };
     }
 
     public async getTracks(roomId: string): Promise<string[]> {
@@ -80,7 +82,7 @@ export class RoomService {
         if (!room) {
             throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
         }
-        if (!room.users.find(({ _id }) => user._id === _id)) {
+        if (!room.users.find(({ _id }) => user._id.equals(_id))) {
             room.users.push(user);
             await room.save();
         }
@@ -97,11 +99,11 @@ export class RoomService {
                 users: {
                     $in: [user]
                 }
-            });
+            }).populate("users", null, User.name);
             username = user.username;
             if (room) {
                 roomId = room.roomId;
-                const index = room.users.findIndex(({ _id }) => _id === user._id);
+                const index = room.users.findIndex(({ _id }) => user._id.equals(_id));
                 if (index > -1) {
                     room.users.splice(index, 1);
                     room.lastUserDate = new Date();

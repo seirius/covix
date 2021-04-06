@@ -5,6 +5,7 @@ import { CovixConfig } from "src/config/CovixConfig";
 import { User } from "src/user/user.schema";
 import { RoomGateway } from "./room.gateway";
 import { EVENTS } from "src/util/socket-events";
+import { Media } from "src/media/media.schema";
 
 // '* * * * * *' - runs every second
 // '*/5 * * * * *' - runs every 5 seconds
@@ -31,12 +32,13 @@ export class RoomCron implements OnModuleDestroy {
                 this.isRunningRoomCurrentTime = true;
                 try {
                     const rooms = await this.roomService.roomModel.find()
-                    .populate("owner", null, User.name);
+                    .populate("owner", null, User.name)
+                    .populate("media", null, Media.name);
                     if (rooms.length) {
                         await Promise.all(rooms.map(async room => {
                             if (room.users?.length) {
                                 const { sockets } = this.roomGateway.server.clients();
-                                if (!room.owner) {
+                                if (!room.owner || !room.media) {
                                     await this.roomService.deleteRoom(room.roomId);
                                 } else {
                                     const ownerSocket = sockets[room.owner.clientId];

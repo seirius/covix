@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { MediaModule } from "src/media/media.module";
+import { MovieModule } from "src/movie/movie.module";
 import { UserModule } from "src/user/user.module";
 import { RoomController } from "./room.controller";
 import { RoomCron } from "./room.cron";
@@ -17,7 +18,8 @@ import { RoomService } from "./room.service";
             }
         ]),
         UserModule,
-        MediaModule
+        MediaModule,
+        MovieModule
     ],
     providers: [
         RoomGateway,
