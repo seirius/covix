@@ -34,14 +34,22 @@ export class RoomService {
         if (!user) {
             throw new NotFoundException("No user found");
         }
-        const roomId = uuid();
-        const room = new this.roomModel({ 
-            roomId,
-            media,
-            owner: user
-        });
-        await room.save();
-        return { roomId, usernames: [] };
+        let room = await this.roomModel.findOne({
+            media: media._id,
+            owner: user._id
+        }).populate("users", null, User.name);
+        let usernames = [];
+        if (!room) {
+            room = new this.roomModel({ 
+                roomId: uuid(),
+                media,
+                owner: user
+            });
+            await room.save();
+        } else {
+            usernames = room.users.map(({ username }) => username);
+        }
+        return { roomId: room.roomId, usernames };
     }
 
     public async getTracks(roomId: string): Promise<string[]> {
@@ -60,15 +68,15 @@ export class RoomService {
         return room.media.tracks?.map(file => file.originalName);
     }
 
-    public async joinRoom({ roomId, user: { username, clientId } }: {
+    public async joinRoom({ roomId, user: { username } }: {
         roomId: string;
         user: {
             username: string;
-            clientId: string;
         }
     }): Promise<void> {
-        const user: UserDocument = await this.userService.saveUser({ username, clientId });
-        const room = await this.roomModel.findOne({ roomId });
+        const user = await this.userService.userModel.findOne({ username });
+        const room = await this.roomModel.findOne({ roomId })
+        .populate("users", null, User.name);
         if (!room) {
             throw new NotFoundException(MESSAGES.ROOM_NOT_FOUND);
         }

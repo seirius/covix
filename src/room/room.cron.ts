@@ -30,20 +30,20 @@ export class RoomCron implements OnModuleDestroy {
             if (!this.isRunningRoomCurrentTime) {
                 this.isRunningRoomCurrentTime = true;
                 try {
-                    const rooms = await this.roomService.roomModel.find().populate("users", null, User.name);
+                    const rooms = await this.roomService.roomModel.find()
+                    .populate("owner", null, User.name);
                     if (rooms.length) {
                         await Promise.all(rooms.map(async room => {
                             if (room.users?.length) {
                                 const { sockets } = this.roomGateway.server.clients();
-                                const clientSockets = room.users
-                                    .map(({ clientId} ) => sockets[clientId])
-                                    .filter(socket => socket)
-                                    .filter(({ connected }) => connected);
-                                if (clientSockets.length) {
-                                    clientSockets[0].emit(EVENTS.REQUEST_CURRENT_TIME);
+                                if (!room.owner) {
+                                    await this.roomService.deleteRoom(room.roomId);
+                                } else {
+                                    const ownerSocket = sockets[room.owner.clientId];
+                                    if (ownerSocket?.connected) {
+                                        ownerSocket.emit(EVENTS.REQUEST_CURRENT_TIME);
+                                    }
                                 }
-                            } else if (this.roomService.isExpired(room)) {
-                                await this.roomService.deleteRoom(room.roomId);
                             }
                         }));
                     }

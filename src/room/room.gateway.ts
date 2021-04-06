@@ -3,7 +3,6 @@ import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect,
 import { Server, Socket } from "socket.io";
 import { CovixConfig } from "src/config/CovixConfig";
 import { FileResponse } from "src/file/file.data";
-import { UserService } from "src/user/user.service";
 import { EVENTS } from "src/util/socket-events";
 import { RoomService } from "./room.service";
 
@@ -16,13 +15,11 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     public server: Server;
 
     constructor(
-        private roomService: RoomService,
-        private userService: UserService
+        private roomService: RoomService
     ) {
     }
 
     public async getClients(roomId: string, ignoreClients: string[] = []): Promise<Socket[]> {
-        console.log(roomId);
         const users = await this.roomService.getUsers(roomId);
         return users
             .filter(({ clientId }) => !ignoreClients.includes(clientId))
@@ -47,8 +44,7 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await this.roomService.joinRoom({
             roomId,
             user: {
-                username,
-                clientId: socket.id
+                username
             }
         });
         this.broadcast(roomId, EVENTS.JOINED_ROOM, username);
