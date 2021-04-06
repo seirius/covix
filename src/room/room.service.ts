@@ -5,7 +5,7 @@ import { CovixConfig } from "src/config/CovixConfig";
 import { File } from "src/file/file.schema";
 import { Media } from "src/media/media.schema";
 import { MediaService } from "src/media/media.service";
-import { User, UserDocument } from "src/user/user.schema";
+import { User } from "src/user/user.schema";
 import { UserService } from "src/user/user.service";
 import { v4 as uuid } from "uuid";
 import { RoomDto, RoomResponse } from "./room.dto";
