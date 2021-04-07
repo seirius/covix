@@ -9,6 +9,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { extname } from "path";
 import { v4 as uuid } from "uuid";
+import * as srt2Vtt from "srt-to-vtt";
 
 async function exists(path: string): Promise<boolean> {
     try {
@@ -30,6 +31,39 @@ export const FileStorage = FileInterceptor("file", {
     })
 });
 
+interface FileData {
+    name: string;
+    originalName: string;
+}
+
+export const FILE_TO_PARSE = {
+    SUBTITLES: {
+        ORIGIN: ".srt",
+        TARGET: ".vtt",
+        PARSE: function (name: string, originalName: string): Promise<FileData> {
+            return new Promise<FileData>((resolve, reject) => {
+                const parsedPath = path.parse(name);
+                const vttName = parsedPath.name + this.TARGET;
+                const originalNameVtt = path.parse(originalName).name + this.TARGET;
+                const srtPath = getFilePath(name);
+                const vttPath = getFilePath(vttName);
+                const writable = fs.createWriteStream(vttPath);
+                fs
+                .createReadStream(srtPath)
+                .pipe(srt2Vtt())
+                .pipe(writable);
+                writable.on("finish", async () => {
+                    await fs.promises.unlink(srtPath);
+                    resolve({
+                        name: vttName,
+                        originalName: originalNameVtt
+                    });
+                })
+            });
+        }
+    }
+};
+
 @Injectable()
 export class FileService {
 
@@ -38,8 +72,28 @@ export class FileService {
         public readonly fileModel: Model<FileDocument>,
     ) {}
 
+    public async parseIfNeeded(name: string, originalName: string): Promise<FileData> {
+        const { ext } = path.parse(name);
+        await Promise.all(Object
+        .values(FILE_TO_PARSE)
+        .map(async parser => {
+            if (parser.ORIGIN === ext) {
+                const result = await parser.PARSE(name, originalName);
+                name = result.name;
+                originalName = result.originalName;
+            }
+        }));
+        return {
+            name, originalName
+        };
+    }
+
     public async saveFile(name: string, originalName: string): Promise<FileDocument> {
-        const file = new this.fileModel({ name, originalName });
+        const { name: parsedName, originalName: parsedOName } = await this.parseIfNeeded(name, originalName);
+        const file = new this.fileModel({
+            name: parsedName,
+            originalName: parsedOName
+        });
         await file.save();
         return file;
     }

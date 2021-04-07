@@ -11,11 +11,10 @@ export class FileController {
 
     @Post("")
     @UseInterceptors(FileStorage)
-    public async uploadFile(
+    public uploadFile(
         @UploadedFile() file: Express.Multer.File
     ): Promise<FileResponse> {
-        await this.fileService.saveFile(file.filename, file.originalname);
-        return { name: file.filename, originalName: file.originalname };
+        return this.fileService.saveFile(file.filename, file.originalname);
     }
 
 }
