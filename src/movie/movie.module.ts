@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { FileModule } from "src/file/file.module";
 import { MediaModule } from "src/media/media.module";
+import { TorrentClientModule } from "src/torrent-client/torrent-client.module";
 import { MovieController } from "./movie.controller";
 import { MovieGateway } from "./movie.gateway";
 import { Movie, MovieSchema } from "./movie.schema";
@@ -16,7 +17,8 @@ import { MovieService } from "./movie.service";
             }
         ]),
         MediaModule,
-        FileModule
+        FileModule,
+        TorrentClientModule
     ],
     controllers: [MovieController],
     providers: [MovieService, MovieGateway],

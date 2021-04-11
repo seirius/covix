@@ -5,8 +5,11 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CovixConfig } from './config/CovixConfig';
+import { MediaSourceModule } from './media-source/media-source.module';
 import { MovieModule } from './movie/movie.module';
 import { RoomModule } from './room/room.module';
+import { TorrentClientModule } from './torrent-client/torrent-client.module';
+import { TorrentFeedModule } from './torrent-feed/torrent-feed.module';
 
 @Module({
     imports: [
@@ -16,7 +19,10 @@ import { RoomModule } from './room/room.module';
         }),
         MongooseModule.forRoot(CovixConfig.MONGO_URL),
         RoomModule,
-        MovieModule
+        MovieModule,
+        TorrentFeedModule,
+        TorrentClientModule,
+        MediaSourceModule
     ],
     controllers: [AppController],
     providers: [

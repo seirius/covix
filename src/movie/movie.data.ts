@@ -18,6 +18,13 @@ export interface AddMovieArgs {
     icon?: string;
 }
 
+export interface TorrentAsMovieArgs {
+    feed: string;
+    label: string;
+    iconUrl: string;
+    icon?: string;
+}
+
 export class MovieResponse {
     id: string;
     mediaId: string;

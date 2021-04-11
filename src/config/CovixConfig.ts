@@ -38,5 +38,10 @@ export class CovixConfig {
         .get("COVIX_ROOM_EXPIRE_TIME")
         .default(60)
         .asInt();
+
+    public static readonly TORRENT_UPDATE_STATE_INTERVAL: number = env
+    .get("COVIX_TORRENT_UPDATE_STATE_INTERVAL")
+    .default(1000)
+    .asInt();
         
 }

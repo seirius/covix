@@ -5,6 +5,7 @@ export type FileDocument = File & Document;
 
 @Schema()
 export class File {
+    _id: string;
     
     @Prop()
     name: string;

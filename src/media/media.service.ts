@@ -42,7 +42,6 @@ export class MediaService {
         .populate("file", null, File.name);
         if (media) {
             if (media.tracks) {
-                console.log(media.tracks);
                 await Promise.all(media.tracks.map(track => this.fileService.deleteFile(track.name)));
             }
             await this.fileService.deleteFile(media.file.name);

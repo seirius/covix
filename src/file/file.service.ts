@@ -24,6 +24,15 @@ export function getFilePath(name: string): string {
     return path.join(CovixConfig.FILE_PATH, name);
 }
 
+export async function getTorrentTmpPath(): Promise<string> {
+    const torrentTmpPath = path.join(CovixConfig.FILE_PATH, "tmp");
+    const dirExists = await exists(torrentTmpPath);
+    if (!dirExists) {
+        await fs.promises.mkdir(torrentTmpPath);
+    }
+    return torrentTmpPath;
+}
+
 export const FileStorage = FileInterceptor("file", {
     storage: diskStorage({
         destination: CovixConfig.FILE_PATH,

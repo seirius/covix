@@ -5,7 +5,8 @@ import { File } from "src/file/file.schema";
 import { FileService } from "src/file/file.service";
 import { Media } from "src/media/media.schema";
 import { MediaService } from "src/media/media.service";
-import { AddMovieArgs } from "./movie.data";
+import { TorrentClientService } from "src/torrent-client/torrent-client.service";
+import { AddMovieArgs, TorrentAsMovieArgs } from "./movie.data";
 import { Movie, MovieDocument } from "./movie.schema";
 
 @Injectable()
@@ -15,6 +16,7 @@ export class MovieService {
         @InjectModel(Movie.name)
         public readonly movieModel: Model<MovieDocument>,
         private readonly mediaService: MediaService,
+        private readonly torrentService: TorrentClientService,
         private readonly fileService: FileService
     ) {}
 
@@ -22,6 +24,22 @@ export class MovieService {
         name, label, iconUrl, icon
     }: AddMovieArgs): Promise<MovieDocument> {
         const media = await this.mediaService.createMedia(name);
+        let iconFile: File;
+        if (icon) {
+            iconFile = await this.fileService.fileModel.findOne({ name: icon });
+        }
+        const movie = new this.movieModel({
+            label, media, iconUrl, icon: iconFile
+        });
+        await movie.save();
+        return movie;
+    }
+
+    public async addMovieFromTorrent({
+        feed, label, iconUrl, icon
+    }: TorrentAsMovieArgs): Promise<MovieDocument> {
+        const { file } = await this.torrentService.addTorrent(feed);
+        const media = await this.mediaService.createMedia(file.name);
         let iconFile: File;
         if (icon) {
             iconFile = await this.fileService.fileModel.findOne({ name: icon });
