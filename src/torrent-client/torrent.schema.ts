@@ -8,6 +8,7 @@ export enum TorrentState {
     DONWLOADING = "downloading",
     START = "start",
     DONE = "done",
+    PAUSED = "paused",
     ERROR = "error"
 }
 
@@ -37,6 +38,9 @@ export class Torrent {
         ref: File.name
     })
     file: File;
+
+    @Prop()
+    feed: string;
 }
 
 export const TorrentSchema = SchemaFactory.createForClass(Torrent);
