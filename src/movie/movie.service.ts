@@ -6,7 +6,7 @@ import { FileService } from "src/file/file.service";
 import { Media } from "src/media/media.schema";
 import { MediaService } from "src/media/media.service";
 import { TorrentClientService } from "src/torrent-client/torrent-client.service";
-import { AddMovieArgs, TorrentAsMovieArgs } from "./movie.data";
+import { AddMovieArgs, TorrentAsMovieArgs, UpdateMovieArgs } from "./movie.data";
 import { Movie, MovieDocument } from "./movie.schema";
 
 @Injectable()
@@ -31,6 +31,44 @@ export class MovieService {
         const movie = new this.movieModel({
             label, media, iconUrl, icon: iconFile
         });
+        await movie.save();
+        return movie;
+    }
+
+    public async updateMovie(id: string, {
+        label, name, iconUrl, icon, feed
+    }: UpdateMovieArgs): Promise<MovieDocument> {
+        const movie = await this.movieModel.findById(id)
+        .populate("media", null, Media.name)
+        .populate("icon", null, File.name);
+        if (!movie) {
+            throw new NotFoundException("Movie not found");
+        }
+        if (label) {
+            movie.label = label;
+        }
+        if (name || feed) {
+            if (movie.media) {
+                await this.mediaService.deleteMedia(movie.media._id);
+            }
+            if (feed) {
+                const { file } = await this.torrentService.addTorrent(feed);
+                name = file.name;
+            }
+            movie.media = await this.mediaService.createMedia(name);
+        }
+        if (icon || iconUrl) {
+            if (movie.icon) {
+                await this.fileService.deleteFile(movie.icon.name);
+            }
+            if (icon) {
+                movie.icon = await this.fileService.fileModel.findOne({ name: icon });
+                movie.iconUrl = null;
+            }
+            if (iconUrl) {
+                movie.iconUrl = iconUrl;
+            }
+        }
         await movie.save();
         return movie;
     }
@@ -69,7 +107,9 @@ export class MovieService {
         .populate("media", null, Media.name)
         .populate("icon", null, File.name);
         if (movie) {
-            await this.mediaService.deleteMedia(movie.media._id);
+            if (movie.media) {
+                await this.mediaService.deleteMedia(movie.media._id);
+            }
             if (movie.icon) {
                 await this.fileService.deleteFile(movie.icon.name);
             }

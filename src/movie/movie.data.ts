@@ -13,9 +13,18 @@ export function movieAsResponse(movie: Movie): MovieResponse {
 
 export interface AddMovieArgs {
     label: string;
-    name: string;
+    name?: string;
+    feed?: string;
     iconUrl?: string;
     icon?: string;
+}
+
+export interface UpdateMovieArgs {
+    label?: string;
+    name?: string;
+    iconUrl?: string;
+    icon?: string;
+    feed?: string;
 }
 
 export interface TorrentAsMovieArgs {

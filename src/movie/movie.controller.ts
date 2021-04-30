@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put, Query } from "@nestjs/common";
 import { File } from "src/file/file.schema";
 import { Media } from "src/media/media.schema";
-import { AddMovieArgs, movieAsResponse, MovieResponse, TorrentAsMovieArgs } from "./movie.data";
+import { AddMovieArgs, movieAsResponse, MovieResponse, TorrentAsMovieArgs, UpdateMovieArgs } from "./movie.data";
 import { MovieGateway } from "./movie.gateway";
 import { MovieService } from "./movie.service";
 
@@ -18,6 +18,15 @@ export class MovieController {
         @Body() body: AddMovieArgs
     ): Promise<MovieResponse> {
         const movie = await this.movieService.addMovie(body);
+        return movieAsResponse(movie);
+    }
+
+    @Put("")
+    public async updateMovie(
+        @Query("id") id: string,
+        @Body() body: UpdateMovieArgs
+    ): Promise<MovieResponse> {
+        const movie = await this.movieService.updateMovie(id, body);
         return movieAsResponse(movie);
     }
 
