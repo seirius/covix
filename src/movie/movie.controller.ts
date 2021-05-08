@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
 import { File } from "src/file/file.schema";
 import { Media } from "src/media/media.schema";
-import { AddMovieArgs, movieAsResponse, MovieResponse, TorrentAsMovieArgs, UpdateMovieArgs } from "./movie.data";
+import { AddMovieArgs, movieAsResponse, MovieListResponse, MovieResponse, TorrentAsMovieArgs, UpdateMovieArgs } from "./movie.data";
 import { MovieGateway } from "./movie.gateway";
 import { MovieService } from "./movie.service";
 
@@ -58,9 +58,28 @@ export class MovieController {
     }
 
     @Get("list")
-    public async getMovies(): Promise<MovieResponse[]> {
+    public async getMovies(
+        @Query("query") query: string,
+        @Query("currentPage", ParseIntPipe) currentPage?: number,
+        @Query("perPage", ParseIntPipe) perPage?: number
+    ): Promise<MovieListResponse> {
+        const where: { label?: any; } = {};
+        if (query?.trim()) {
+            where.label = {
+                $regex: query,
+                $options: "i"
+            };
+        }
+        const pagination: {
+            skip?: number;
+            limit?: number;
+        } = {};
+        if (currentPage && perPage) {
+            pagination.skip = (currentPage - 1) * perPage;
+            pagination.limit = perPage;
+        }
         const movies = await this.movieService.movieModel
-        .find()
+        .find(where, null, pagination)
         .populate({
             path: "media",
             model: Media.name,
@@ -70,8 +89,12 @@ export class MovieController {
             }
         })
         .populate("icon", null, File.name)
-        .sort({ label: "asc" })
-        return movies.map(movieAsResponse);
+        .collation({ locale: "en" })
+        .sort({ label: 1 });
+        return {
+            movies: movies.map(movieAsResponse),
+            totalCount: await this.movieService.movieModel.countDocuments(where)
+        };
     }
 
     @Delete(":id")

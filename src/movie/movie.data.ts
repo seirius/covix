@@ -42,3 +42,8 @@ export class MovieResponse {
     iconUrl?: string;
     icon?: string;
 }
+
+export interface MovieListResponse {
+    movies: MovieResponse[];
+    totalCount: number;
+}
