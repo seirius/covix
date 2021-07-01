@@ -1,20 +1,25 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
-import { Season, SeasonDocument } from "src/season/season.schema";
+import { File } from "src/file/file.schema";
 
 export type TvShowDocument = TvShow & Document;
 
 @Schema()
 export class TvShow {
 
+    _id: string;
+
     @Prop()
     label: string;
 
+    @Prop()
+    iconUrl: string;
+
     @Prop({
-        type: [Types.ObjectId],
-        ref: Season.name
+        type: Types.ObjectId,
+        ref: File.name
     })
-    seasons: SeasonDocument[];
+    icon: File;
 
 }
 

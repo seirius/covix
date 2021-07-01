@@ -16,6 +16,9 @@ export class MediaService {
 
     public async createMedia(fileName: string): Promise<MediaDocument> {
         const file = await this.fileService.fileModel.findOne({ name: fileName });
+        if (!file) {
+            throw new NotFoundException(`File not found by name ${fileName}`);
+        }
         const media = new this.mediaModel({ file });
         await media.save();
         return media;

@@ -8,6 +8,7 @@ export const EVENTS = {
     REQUEST_CURRENT_TIME: "request-current-time",
     CLIENT_ID: "client-id",
     MOVIE_DELETE: "movie-delete",
+    TV_SHOW_DELETE: "tv-show-delete",
     NEW_USER: "new-user",
     USER_LEFT: "user-left",
     USER_JOINED: "user-joined",

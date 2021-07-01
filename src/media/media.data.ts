@@ -10,7 +10,7 @@ export interface MediaResponse {
 export function mediaAsResponse(media: Media): MediaResponse {
     return {
         id: media._id,
-        file: fileAsResponse(media.file),
+        file: media.file ? fileAsResponse(media.file) : null,
         tracks: media.tracks?.map(fileAsResponse)
     };
 }

@@ -4,7 +4,8 @@ import { CovixConfig } from "./config/CovixConfig";
 
 @Controller("/api")
 export class AppController {
-    constructor() { }
+    constructor(
+    ) { }
 
     @Get("socket-path")
     public getSocketPath(): { socketPath: string } {

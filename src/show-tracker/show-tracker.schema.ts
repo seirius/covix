@@ -2,13 +2,20 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 import { Media } from "src/media/media.schema";
 import { TvShow } from "src/tv-show/tv-show.schema";
+import { User } from "src/user/user.schema";
 
-export type SeasonDocument = Season & Document;
+export type ShowTrackerDocument = ShowTracker & Document;
 
 @Schema()
-export class Season {
+export class ShowTracker {
 
     _id: string;
+
+    @Prop({
+        type: Types.ObjectId,
+        ref: User.name
+    })
+    user: User;
 
     @Prop({
         type: Types.ObjectId,
@@ -16,22 +23,12 @@ export class Season {
     })
     tvShow: TvShow;
 
-    @Prop()
-    label: string;
-
     @Prop({
-        type: [Types.ObjectId],
+        type: Types.ObjectId,
         ref: Media.name
     })
-    medias: Media[];
-
-    @Prop()
-    index: number; 
-
-    public asDocument(): SeasonDocument {
-        return <any>this as SeasonDocument;
-    }
+    media: Media;
 
 }
 
-export const SeasonSchema = SchemaFactory.createForClass(Season);
+export const ShowTrackerSchema = SchemaFactory.createForClass(ShowTracker);

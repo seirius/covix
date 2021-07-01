@@ -44,6 +44,11 @@ export class Room extends Document {
         ref: User.name
     })
     owner: User;
+
+    @Prop({
+        default: Date.now
+    })
+    lastTimeWatched: Date;
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

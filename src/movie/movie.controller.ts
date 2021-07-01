@@ -1,8 +1,10 @@
 import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
+import { QueryWithHelpers, Types } from "mongoose";
 import { File } from "src/file/file.schema";
 import { Media } from "src/media/media.schema";
 import { AddMovieArgs, movieAsResponse, MovieListResponse, MovieResponse, TorrentAsMovieArgs, UpdateMovieArgs } from "./movie.data";
 import { MovieGateway } from "./movie.gateway";
+import { MovieDocument } from "./movie.schema";
 import { MovieService } from "./movie.service";
 
 @Controller("api/movie")
@@ -39,9 +41,21 @@ export class MovieController {
     }
 
     @Get("")
-    public async getMovie(@Query("id") id: string): Promise<MovieResponse> {
-        const movie = await this.movieService.movieModel
-        .findById(id)
+    public async getMovie(
+        @Query("id") id?: string, 
+        @Query("mediaId") mediaId?: string
+    ): Promise<MovieResponse> {
+        let query: QueryWithHelpers<MovieDocument, MovieDocument, {}>;
+        if (id) {
+            query = this.movieService.movieModel
+            .findById(id);
+        } else if (mediaId) {
+            query = this.movieService.movieModel
+            .findOne({
+                media: Types.ObjectId(mediaId) as any
+            });
+        }
+        const movie = await query
         .populate({
             path: "media",
             model: Media.name,

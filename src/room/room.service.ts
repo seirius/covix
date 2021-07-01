@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { CovixConfig } from "src/config/CovixConfig";
 import { File } from "src/file/file.schema";
 import { Media } from "src/media/media.schema";
@@ -35,8 +35,8 @@ export class RoomService {
             throw new NotFoundException("No user found");
         }
         let room = await this.roomModel.findOne({
-            media: media._id,
-            owner: user._id
+            media: <any> Types.ObjectId(media._id),
+            owner: <any> Types.ObjectId(user._id)
         })
         .populate("users", null, User.name)
         .populate("owner", null, User.name);
@@ -51,7 +51,7 @@ export class RoomService {
         } else {
             usernames = room.users.map(({ username }) => username);
         }
-        return { roomId: room.roomId, usernames, owner: room.owner.username };
+        return { roomId: room.roomId, usernames, owner: room.owner.username, lastTimeWatched: room.lastTimeWatched };
     }
 
     public async getTracks(roomId: string): Promise<string[]> {
@@ -99,14 +99,24 @@ export class RoomService {
                 users: {
                     $in: [user]
                 }
-            }).populate("users", null, User.name);
+            })
+            .populate("users", null, User.name)
+            .populate("owner", null, User.name);
             username = user.username;
             if (room) {
                 roomId = room.roomId;
                 const index = room.users.findIndex(({ _id }) => user._id.equals(_id));
+                let updateRoom = false;
                 if (index > -1) {
                     room.users.splice(index, 1);
                     room.lastUserDate = new Date();
+                    updateRoom = true;
+                }
+                if (room.owner._id === user._id) {
+                    room.lastTimeWatched = new Date();
+                    updateRoom = true;
+                }
+                if (updateRoom) {
                     await room.save();
                 }
             }

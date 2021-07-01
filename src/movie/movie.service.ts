@@ -31,8 +31,7 @@ export class MovieService {
         const movie = new this.movieModel({
             label, media, iconUrl, icon: iconFile
         });
-        await movie.save();
-        return movie;
+        return movie.save();
     }
 
     public async updateMovie(id: string, {
@@ -69,8 +68,7 @@ export class MovieService {
                 movie.iconUrl = iconUrl;
             }
         }
-        await movie.save();
-        return movie;
+        return movie.save();
     }
 
     public async addMovieFromTorrent({

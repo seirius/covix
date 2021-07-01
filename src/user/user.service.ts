@@ -20,7 +20,7 @@ export function userAsResponse(user: User): UserResponse {
         id: user._id,
         username: user.username,
         clientId: user.clientId,
-        createdAt: user.createdAt.getTime()
+        createdAt: user.createdAt?.getTime()
     };
 }
 

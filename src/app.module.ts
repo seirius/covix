@@ -10,6 +10,7 @@ import { MovieModule } from './movie/movie.module';
 import { RoomModule } from './room/room.module';
 import { TorrentClientModule } from './torrent-client/torrent-client.module';
 import { TorrentFeedModule } from './torrent-feed/torrent-feed.module';
+import { TvShowModule } from './tv-show/tv-show.module';
 
 @Module({
     imports: [
@@ -22,7 +23,8 @@ import { TorrentFeedModule } from './torrent-feed/torrent-feed.module';
         MovieModule,
         TorrentFeedModule,
         TorrentClientModule,
-        MediaSourceModule
+        MediaSourceModule,
+        TvShowModule
     ],
     controllers: [AppController],
     providers: [
